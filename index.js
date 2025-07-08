@@ -23,7 +23,7 @@ const {
 } = require("./controller/authentication");
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 
 // Middleware
 app.use(cors());
@@ -233,7 +233,7 @@ app.post("/api/auth/reset-password", async (req, res) => {
   }
 });
 
-app.listen(PORT, "0.0.0.0", () => {
+app.listen(PORT,  () => {
   console.log(`Server running on port ${PORT}`);
 });
 
