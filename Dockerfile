@@ -11,7 +11,7 @@ COPY . .
 RUN npm install
 
 # Jalankan server ketika container start
-CMD ["npm", "start"]
+CMD ["node", "index.js"]
 
 # Aplikasi kamu akan berjalan di port 8080 (Cloud Run default)
 EXPOSE 8080
