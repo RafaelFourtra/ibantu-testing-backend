@@ -14,6 +14,7 @@ const {
 const {
   registerUser,
   registerUserByGoogle,
+  getUserByGoogleId,
   loginUser,
   logoutUser,
   resetPassword,
@@ -116,13 +117,14 @@ app.post("/api/auth/register", async (req, res) => {
   try {
     const { email, password, type } = req.body;
     const user = await registerUser(email, password, type);
+    const token = await user.getIdToken();
     res.status(201).json({
       success: true,
       message: "User registered successfully",
+      token: token,
       user: {
         uid: user.uid,
         email: user.email,
-        displayName: user.displayName,
       },
     });
   } catch (error) {
@@ -135,14 +137,37 @@ app.post("/api/auth/register", async (req, res) => {
 
 app.post("/api/auth/google-register", async (req, res) => {
   try {
-    const { email, googleId, type } = req.body;
+    const { email, googleId, type, idToken } = req.body;
     const user = await registerUserByGoogle(email, googleId, type);
     res.status(201).json({
       success: true,
       message: "User registered successfully",
+      token: idToken,
       user: {
         uid: user.uid,
         email: user.email,
+      },
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
+app.post("/api/auth/google-login", async (req, res) => {
+  try {
+    const { email, googleId, idToken } = req.body;
+    const user = await getUserByGoogleId(googleId);
+    res.status(200).json({
+      success: true,
+      message: "User login successfully",
+      token: idToken,
+      user: {
+        uid: user.uid,
+        email: user.email,
+        type: user.type, // ← tambahkan ini
       },
     });
   } catch (error) {
@@ -157,13 +182,16 @@ app.post("/api/auth/login", async (req, res) => {
   try {
     const { email, password } = req.body;
     const user = await loginUser(email, password);
+    const dataUser = await getUserByGoogleId(user.uid);
+    const token = await user.getIdToken();
     res.json({
       success: true,
       message: "Login successful",
+      token: token,
       user: {
         uid: user.uid,
         email: user.email,
-        displayName: user.displayName,
+        type: dataUser.type,
       },
     });
   } catch (error) {
@@ -205,7 +233,7 @@ app.post("/api/auth/reset-password", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
 });
 

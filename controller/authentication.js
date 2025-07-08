@@ -6,7 +6,7 @@ const {
   updateProfile,
   onAuthStateChanged,
 } = require("firebase/auth");
-const { doc, setDoc, collection } = require("firebase/firestore");
+const { getDoc, doc, setDoc, collection } = require("firebase/firestore");
 const { db } = require("../firebase");
 
 const { auth } = require("../firebase");
@@ -41,21 +41,45 @@ async function registerUser(email, password, type) {
 async function registerUserByGoogle(email, googleId, type) {
   try {
     const userRef = doc(collection(db, "users"), googleId);
-    await setDoc(userRef, {
-      uid: googleId,
-      email: email,
-      type: type,
-      googleId: googleId,
-      createdAt: new Date(),
-    });
+    const existingDoc = await getDoc(userRef);
 
-    console.log("User registered successfully:", googleId);
+    if (!existingDoc.exists()) {
+      await setDoc(userRef, {
+        uid: googleId,
+        email: email,
+        type: type,
+        googleId: googleId,
+        createdAt: new Date(),
+      });
+
+      console.log("User registered successfully:", googleId);
+    } else {
+      console.log("User already exists:", googleId);
+    }
+
     return {
       uid: googleId,
       email: email,
     };
   } catch (error) {
     console.error("Error registering user:", error.message);
+    throw error;
+  }
+}
+
+async function getUserByGoogleId(googleId) {
+  try {
+    const userRef = doc(db, "users", googleId);
+    const userSnap = await getDoc(userRef);
+
+    if (userSnap.exists()) {
+      return userSnap.data(); // data user
+    } else {
+      console.log("User not found:", googleId);
+      return null;
+    }
+  } catch (error) {
+    console.error("Error fetching user:", error.message);
     throw error;
   }
 }
@@ -126,4 +150,5 @@ module.exports = {
   onAuthStateChange,
   getCurrentUser,
   registerUserByGoogle,
+  getUserByGoogleId
 };
